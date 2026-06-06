@@ -71,8 +71,9 @@ tailwind.config = {
   .btn-primary { transition: transform .3s ease, box-shadow .3s ease, background-color .3s ease; }
   .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -12px rgba(31,93,99,.6); }
 
-  .hero-img { animation: slowzoom 18s ease-in-out infinite alternate; }
-  @keyframes slowzoom { from { transform: scale(1.02); } to { transform: scale(1.12); } }
+  .hero-img { animation: slowzoom 18s ease-in-out infinite alternate; will-change: transform; transform: translateZ(0); backface-visibility: hidden; }
+  @keyframes slowzoom { from { transform: scale(1.02) translateZ(0); } to { transform: scale(1.12) translateZ(0); } }
+  @media (prefers-reduced-motion: reduce) { .hero-img { animation: none; } html { scroll-behavior: auto; } }
 
   .marquee { animation: scrollx 38s linear infinite; }
   @keyframes scrollx { to { transform: translateX(-50%); } }
@@ -660,11 +661,6 @@ tailwind.config = {
 </script>
 
 <script>
-/* ---------- Smooth scroll (Lenis) ---------- */
-const lenisScript = document.createElement('script');
-lenisScript.src = 'https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js';
-document.head.appendChild(lenisScript);
-
 /* ---------- GSAP ---------- */
 const gsapScript = document.createElement('script');
 gsapScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js';
@@ -683,16 +679,6 @@ const pages = {
   galerij: document.getElementById('page-galerij'),
   contact: document.getElementById('page-contact'),
 };
-
-let lenis;
-function initLenis() {
-  if (typeof Lenis === 'undefined') { setTimeout(initLenis, 60); return; }
-  lenis = new Lenis({ duration: 1.1, smoothWheel: true });
-  function raf(t){ lenis.raf(t); requestAnimationFrame(raf); }
-  requestAnimationFrame(raf);
-  if (window.ScrollTrigger) lenis.on('scroll', ScrollTrigger.update);
-}
-initLenis();
 
 /* ---------- Reveal animation ---------- */
 function runReveals(scope) {
@@ -715,7 +701,7 @@ function showPage(name) {
     l.classList.toggle('active', l.dataset.nav === name);
   });
 
-  if (lenis) lenis.scrollTo(0, { immediate: true }); else window.scrollTo(0,0);
+  window.scrollTo(0, 0);
   runReveals(target);
   if (window.ScrollTrigger) setTimeout(()=>ScrollTrigger.refresh(), 100);
 }
@@ -736,7 +722,10 @@ document.addEventListener('click', (e) => {
   if (ws) {
     setTimeout(() => {
       const el = document.getElementById('ws-' + ws);
-      if (el) { if (lenis) lenis.scrollTo(el, { offset: -80 }); else el.scrollIntoView({behavior:'smooth'}); }
+      if (el) {
+        const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
     }, 200);
   }
   if (subj && name === 'contact') {
